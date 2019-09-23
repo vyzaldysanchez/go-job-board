@@ -121,6 +121,11 @@ func main() {
 			method:  "PUT",
 		},
 		Route{
+			path:    "/jobs/{id:[0-9]+}",
+			handler: jobsC.Delete,
+			method:  "DELETE",
+		},
+		Route{
 			path:    "/jobs/{id:[0-9]+}/add-skill",
 			handler: jobsC.AddJobPostSkill,
 			method:  "PUT",
@@ -130,7 +135,6 @@ func main() {
 			handler: jobsC.RemoveJobPostSkill,
 			method:  "PUT",
 		},
-
 	)
 
 	fmt.Printf("Running on port :%d", appCfg.Port)

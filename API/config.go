@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 )
 
 type PostgressConfig struct {
@@ -28,12 +29,16 @@ func (c PostgressConfig) ConnectionInfo() string {
 }
 
 func DefaultPostgressConfig() PostgressConfig {
+	port, err := strconv.Atoi(getEnvVar("PGPORT"))
+	if err != nil {
+		fmt.Println("Could not parse DB port")
+	}
 	return PostgressConfig{
-		Host:     "localhost",
-		Port:     5432,
-		User:     "postgres",
-		Password: "postgres",
-		Dbname:   "lenslocked_dev",
+		Host:     getEnvVar("PGHOST"),
+		Port:     port,
+		User:     getEnvVar("PGUSER"),
+		Password: getEnvVar("PGPASSWORD"),
+		Dbname:   getEnvVar("PGDATABASE"),
 	}
 }
 
@@ -44,12 +49,11 @@ type Config struct {
 	HMACKey  string          `json:"hmacKey"`
 	Database PostgressConfig `json:"database"`
 	Mailgun  MailgunConfig   `json:"mailgun"`
-	Dropbox  OAuthConfig     `json:"dropbox"`
 }
 
 func DefaultConfig() Config {
 	return Config{
-		Port:     4000,
+		Port:     5000,
 		Env:      "dev",
 		Pepper:   "mUGD8rTdJe",
 		HMACKey:  "the-secret-key",
@@ -62,12 +66,16 @@ func (c Config) IsProd() bool {
 }
 
 func LoadConfig(configRequired bool) Config {
+	if !configRequired {
+		fmt.Println("config.json not required, using default config for development")
+		return DefaultConfig()
+	}
 	f, err := os.Open("config.json")
 	if err != nil {
 		if configRequired {
 			panic(err)
 		}
-		fmt.Println("Using default config..")
+		fmt.Println("config.json not found, using default config for development")
 		return DefaultConfig()
 	}
 	var c Config
@@ -92,4 +100,12 @@ type OAuthConfig struct {
 	Secret   string `json:"secret"`
 	AuthURL  string `json:"auth_url"`
 	TokenURL string `json:"token_url"`
+}
+
+func getEnvVar(key string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		fmt.Fprintf(os.Stderr, "Could not find env %s\n", key)
+	}
+	return val
 }

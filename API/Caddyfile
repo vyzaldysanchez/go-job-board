@@ -1,7 +1,0 @@
-lenslocked-project-demo.net {
-  proxy / localhost:4000 {
-        transparent
-    }
-  gzip
-}
-

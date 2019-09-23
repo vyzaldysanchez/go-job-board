@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
@@ -63,6 +64,21 @@ func (j *Jobs) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondJSON(w, http.StatusCreated, jobPost)
+}
+
+//DELETE /jobs/id
+func (j *Jobs) Delete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		respondJSON(w, http.StatusInternalServerError, "Could not delete jobPost")
+		return
+	}
+	if err := j.js.Delete(uint(id)); err != nil {
+		respondJSON(w, http.StatusInternalServerError, err)
+		return
+	}
+	respondJSON(w, http.StatusOK, fmt.Sprintf("Removed Jobpost with ID %v", id))
 }
 
 // PUT /jobs/id/add-skill
