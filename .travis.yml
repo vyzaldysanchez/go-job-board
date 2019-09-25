@@ -6,7 +6,7 @@ services:
 
 before_install:
   - psql -c 'create database job_board_test;' -U postgres
-  - docker build -t go-job-board/API-test -f ./API/Dockerfile.dev ./API
+  - docker build -t go-job-board/api-test -f ./API/Dockerfile.dev ./API
 
 script:
-  - docker run --env env=CI go-job-board/API-test go test ./tests -v
+  - docker run --env env=CI go-job-board/api-test go test ./tests -v
