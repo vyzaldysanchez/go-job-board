@@ -64,7 +64,6 @@ func TestUserService(t *testing.T) {
 	t.Run("Update", testUserService_Update(services.User, services.Skill))
 	t.Run("Delete", testUserService_Delete(services.User))
 
-	// teardown
 }
 
 func testUserService_Update(us models.UserService, ss models.SkillsService) func(t *testing.T) {
@@ -196,6 +195,24 @@ func testCompanyProfileIsNotNil(t *testing.T, us models.UserService, benefit mod
 	})
 }
 
+func testAddCompanyProfileSkill(t *testing.T, ss models.SkillsService, got *models.CompanyProfile) {
+	t.Run("add-skill", func(t *testing.T) {
+		skill := models.Skill{}
+		skill.ID = 1
+
+		if err := ss.AddSkillToOwner(got, skill); err != nil {
+			t.Errorf("error adding company profile skill error = %v, companyProfile = %v, skill = %v", err, got, skill)
+		}
+
+		t.Run("SadPath: skill with no ID is not allowed", func(t *testing.T) {
+			wantError := models.ErrIDInvalid
+			if err := ss.AddSkillToOwner(got, models.Skill{}); err != wantError {
+				t.Errorf("should return %q error got %q error", wantError, err)
+			}
+		})
+
+	})
+}
 func testRemoveCompanyProfileSkill(t *testing.T, ss models.SkillsService, got *models.CompanyProfile) {
 	t.Run("remove-skill", func(t *testing.T) {
 		skill := models.Skill{}
@@ -206,17 +223,6 @@ func testRemoveCompanyProfileSkill(t *testing.T, ss models.SkillsService, got *m
 		}
 		if len(got.Skills) != 0 {
 			t.Errorf("expected skills list to be empty, but got = %v elements", len(got.Skills))
-		}
-	})
-}
-
-func testAddCompanyProfileSkill(t *testing.T, ss models.SkillsService, got *models.CompanyProfile) {
-	t.Run("add-skill", func(t *testing.T) {
-		skill := models.Skill{}
-		skill.ID = 1
-
-		if err := ss.AddSkillToOwner(got, skill); err != nil {
-			t.Errorf("error adding company profile skill error = %v, companyProfile = %v, skill = %v", err, got, skill)
 		}
 	})
 }
