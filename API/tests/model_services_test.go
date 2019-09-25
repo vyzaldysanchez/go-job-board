@@ -3,7 +3,6 @@ package model_services_test
 import (
 	"fmt"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/samueldaviddelacruz/go-job-board/API/models"
@@ -54,6 +53,7 @@ func TestUserService(t *testing.T) {
 			ConnectionInfo()),
 		models.WithLogMode(false),
 		models.WithUser("pepperhere", "randomtesthmacvalue"),
+		models.WithSkill(),
 	)
 	must(err)
 
@@ -61,43 +61,134 @@ func TestUserService(t *testing.T) {
 	must(services.DestructiveReset())
 	t.Run("Create", testUserService_Create(services.User))
 	t.Run("Find", testUserService_Find(services.User))
-	t.Run("Update", testUserService_Update(services.User))
+	t.Run("Update", testUserService_Update(services.User, services.Skill))
 	t.Run("Delete", testUserService_Delete(services.User))
 
 	// teardown
 }
 
-func testUserService_Update(us models.UserService) func(t *testing.T) {
+func testUserService_Update(us models.UserService, ss models.SkillsService) func(t *testing.T) {
 	return func(t *testing.T) {
-		want := findUserByID(us, 1, t)
 
 		t.Run("CompanyProfile", func(t *testing.T) {
-			got := findUserByID(us, 1, t)
-			got.CompanyProfile = &models.CompanyProfile{
-				Website:        "samysoft.com",
-				FoundedYear:    1991,
-				Description:    "a very nice company",
-				CompanyLogoUrl: "a logo url",
-			}
-
-			if err := us.Update(got); err != nil {
-				t.Error(err)
-			}
-
-			want.CompanyProfile = &models.CompanyProfile{
-				Website:        "samysoft.com",
-				FoundedYear:    1991,
-				Description:    "a very nice company",
-				CompanyLogoUrl: "a logo url",
-			}
-
-			if reflect.DeepEqual(want.CompanyProfile, got.CompanyProfile) {
-				t.Error("Website did not update correctly")
-			}
-
+			user := findUserByID(us, 1, t)
+			companyProfile := testUpdateCompanyProfileFields(user, us, t)
+			testAddCompanyProfileSkill(t, ss, companyProfile)
+			testRemoveCompanyProfileSkill(t, ss, companyProfile)
+			testAddCompanyProfileBenefit(t, us, companyProfile)
+			testUpdateCompanyProfileBenefit(t, companyProfile, us)
+			testRemoveCompanyProfileBenefit(t, companyProfile, us)
 		})
 
 	}
+}
+
+func testRemoveCompanyProfileBenefit(t *testing.T, got *models.CompanyProfile, us models.UserService) {
+	t.Run("remove-benefit", func(t *testing.T) {
+		benefit := got.CompanyBenefits[0]
+
+		if err := us.RemoveCompanyProfileBenefit(got, benefit); err != nil {
+			t.Errorf("error removing company profile benefit, error = %v, companyProfile = %v, benefit = %v", err, got, benefit)
+		}
+
+		got = findUserByID(us, 1, t).CompanyProfile
+
+		if len(got.CompanyBenefits) != 0 {
+			t.Errorf("expected benefits list to be empty, but got = %v elements", len(got.CompanyBenefits))
+		}
+	})
+}
+
+func testUpdateCompanyProfileFields(user *models.User, us models.UserService, t *testing.T) *models.CompanyProfile {
+	user.CompanyProfile = &models.CompanyProfile{
+		Website:        "samysoft.com",
+		FoundedYear:    1991,
+		Description:    "a very nice company 2",
+		CompanyLogoUrl: "a logo url",
+	}
+	if err := us.Update(user); err != nil {
+		t.Error(err)
+	}
+	got := user.CompanyProfile
+	want := &models.CompanyProfile{
+		Website:        "samysoft.com",
+		FoundedYear:    1991,
+		Description:    "a very nice company 2",
+		CompanyLogoUrl: "a logo url",
+	}
+	if got.Website != want.Website {
+		t.Errorf("Website did not update correctly got = %v, want = %v", got.Website, want.Website)
+	}
+	if got.FoundedYear != want.FoundedYear {
+		t.Errorf("FoundedYear did not update correctly got = %v, want = %v", got.FoundedYear, want.FoundedYear)
+	}
+	if got.Description != want.Description {
+		t.Errorf("Description did not update correctly got = %v, want = %v", got.Description, want.Description)
+	}
+	if got.CompanyLogoUrl != want.CompanyLogoUrl {
+		t.Errorf("Description did not update correctly got = %v, want = %v", got.CompanyLogoUrl, want.CompanyLogoUrl)
+	}
+	return got
+}
+
+func testUpdateCompanyProfileBenefit(t *testing.T, got *models.CompanyProfile, us models.UserService) {
+	t.Run("update-benefit", func(t *testing.T) {
+		benefit := &got.CompanyBenefits[0]
+		benefit.BenefitName = "Remote Work"
+
+		if err := us.UpdateCompanyProfileBenefit(benefit); err != nil {
+			t.Errorf("error updating company profile benefit, error = %v, companyProfile = %v, benefit = %v", err, got, benefit)
+		}
+
+		got = findUserByID(us, 1, t).CompanyProfile
+
+		if got.CompanyBenefits[0].BenefitName != benefit.BenefitName {
+			t.Errorf("expected added benefit name to be %q, but got %q", benefit.BenefitName, got.CompanyBenefits[0].BenefitName)
+		}
+	})
+}
+
+func testAddCompanyProfileBenefit(t *testing.T, us models.UserService, got *models.CompanyProfile) {
+	t.Run("add-benefit", func(t *testing.T) {
+		benefit := models.CompanyBenefit{
+			BenefitName: "Flexible schedule",
+		}
+
+		if err := us.AddCompanyProfileBenefit(got, benefit); err != nil {
+			t.Errorf("error adding company profile benefit, error = %v, companyProfile = %v, benefit = %v", err, got, benefit)
+		}
+
+		got = findUserByID(us, 1, t).CompanyProfile
+
+		if got.CompanyBenefits[0].BenefitName != benefit.BenefitName {
+			t.Errorf("expected added benefit name to be %q, but got = %q", benefit.BenefitName, got.CompanyBenefits[0].BenefitName)
+		}
+	})
+}
+
+func testRemoveCompanyProfileSkill(t *testing.T, ss models.SkillsService, got *models.CompanyProfile) {
+	t.Run("remove-skill", func(t *testing.T) {
+		skill := models.Skill{}
+		skill.ID = 1
+
+		if err := ss.DeleteSkillFromOwner(got, skill); err != nil {
+			t.Errorf("error removing company profile skill error = %v, companyProfile = %v, skill = %v", err, got, skill)
+		}
+		if len(got.Skills) != 0 {
+			t.Errorf("expected skills list to be empty, but got = %v elements", len(got.Skills))
+		}
+	})
+}
+
+func testAddCompanyProfileSkill(t *testing.T, ss models.SkillsService, got *models.CompanyProfile) {
+	t.Run("add-skill", func(t *testing.T) {
+		skill := models.Skill{}
+		skill.ID = 1
+
+		if err := ss.AddSkillToOwner(got, skill); err != nil {
+			t.Errorf("error adding company profile skill error = %v, companyProfile = %v, skill = %v", err, got, skill)
+		}
+	})
 }
 
 func testUserService_Delete(us models.UserService) func(t *testing.T) {
