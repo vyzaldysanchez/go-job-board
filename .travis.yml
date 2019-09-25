@@ -9,4 +9,4 @@ before_install:
   - docker build -t go-job-board/api-test -f ./API/Dockerfile.dev ./API
 
 script:
-  - docker run --env env=CI go-job-board/api-test go test ./tests -v
+  - docker run --env env=CI -it --net=host go-job-board/api-test go test ./tests -v

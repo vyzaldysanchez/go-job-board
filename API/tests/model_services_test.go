@@ -35,7 +35,6 @@ func ConnectionInfo() string {
 	env := os.Getenv("env")
 	if env == "CI" {
 		c.Password = ""
-		c.Host = "host.docker.internal"
 	}
 
 	if c.Password == "" {
