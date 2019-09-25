@@ -65,8 +65,8 @@ type UserDB interface {
 	Create(user *User) error
 	Update(user *User) error
 	Delete(id uint) error
-	AddCompanyProfileBenefit(user *CompanyProfile, benefit CompanyBenefit) error
-	RemoveCompanyProfileBenefit(profile *CompanyProfile, benefit CompanyBenefit) error
+	AddCompanyProfileBenefit(companyProfile *CompanyProfile, benefit CompanyBenefit) error
+	RemoveCompanyProfileBenefit(companyProfile *CompanyProfile, benefit CompanyBenefit) error
 	UpdateCompanyProfileBenefit(benefit *CompanyBenefit) error
 }
 
@@ -272,6 +272,43 @@ func (uv *userValidator) Delete(id uint) error {
 		return err
 	}
 	return uv.UserDB.Delete(id)
+}
+
+func (uv *userValidator) AddCompanyProfileBenefit(companyProfile *CompanyProfile, benefit CompanyBenefit) error {
+	if companyProfile == nil {
+		return ErrCompanyProfileRequired
+	}
+	if benefit.BenefitName == "" {
+		return ErrBenefitNameRequired
+	}
+	return uv.UserDB.AddCompanyProfileBenefit(companyProfile, benefit)
+}
+
+func (uv *userValidator) RemoveCompanyProfileBenefit(companyProfile *CompanyProfile, benefit CompanyBenefit) error {
+	if companyProfile == nil {
+		return ErrCompanyProfileRequired
+	}
+
+	if benefit.BenefitName == "" {
+		return ErrBenefitNameRequired
+	}
+
+	return uv.UserDB.RemoveCompanyProfileBenefit(companyProfile, benefit)
+}
+func (uv *userValidator) UpdateCompanyProfileBenefit(benefit *CompanyBenefit) error {
+	if benefit == nil {
+		return ErrCompanyBenefitRequired
+	}
+
+	if benefit.ID <= 0 {
+		return ErrIDInvalid
+	}
+
+	if benefit.BenefitName == "" {
+		return ErrBenefitNameRequired
+	}
+	
+	return uv.UserDB.UpdateCompanyProfileBenefit(benefit)
 }
 
 // bcryptPassword will hash a user's password with a

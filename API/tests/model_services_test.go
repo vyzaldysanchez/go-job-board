@@ -145,6 +145,10 @@ func testUpdateCompanyProfileBenefit(t *testing.T, got *models.CompanyProfile, u
 		if got.CompanyBenefits[0].BenefitName != benefit.BenefitName {
 			t.Errorf("expected added benefit name to be %q, but got %q", benefit.BenefitName, got.CompanyBenefits[0].BenefitName)
 		}
+
+		testCompanyProfileIsNotNil(t, us, got.CompanyBenefits[0])
+		testCompanyProfileBenefitNameIsNotEmpty(t, us, got)
+
 	})
 }
 
@@ -158,10 +162,36 @@ func testAddCompanyProfileBenefit(t *testing.T, us models.UserService, got *mode
 			t.Errorf("error adding company profile benefit, error = %v, companyProfile = %v, benefit = %v", err, got, benefit)
 		}
 
-		got = findUserByID(us, 1, t).CompanyProfile
+		got := findUserByID(us, 1, t).CompanyProfile
 
 		if got.CompanyBenefits[0].BenefitName != benefit.BenefitName {
 			t.Errorf("expected added benefit name to be %q, but got = %q", benefit.BenefitName, got.CompanyBenefits[0].BenefitName)
+		}
+
+		testCompanyProfileIsNotNil(t, us, benefit)
+
+		testCompanyProfileBenefitNameIsNotEmpty(t, us, got)
+
+	})
+}
+
+func testCompanyProfileBenefitNameIsNotEmpty(t *testing.T, us models.UserService, companyProfile *models.CompanyProfile) {
+	t.Run("SadPath: empty BenefitName is not allowed", func(t *testing.T) {
+		wantError := models.ErrBenefitNameRequired
+		benefit := models.CompanyBenefit{
+		}
+		if err := us.AddCompanyProfileBenefit(companyProfile, benefit); err != wantError {
+			t.Errorf("should return %q error got %q error", wantError, err)
+		}
+	})
+}
+
+func testCompanyProfileIsNotNil(t *testing.T, us models.UserService, benefit models.CompanyBenefit) {
+	t.Run("SadPath: nil company profile not allowed", func(t *testing.T) {
+		wantError := models.ErrCompanyProfileRequired
+		if err := us.AddCompanyProfileBenefit(nil, benefit); err != wantError {
+
+			t.Errorf("should return %q error got %q error", wantError, err)
 		}
 	})
 }

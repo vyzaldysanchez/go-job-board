@@ -49,6 +49,10 @@ const (
 	ErrIDInvalid privateError = "models: ID provided was invalid"
 
 	ErrServiceRequired privateError = "models: service is required"
+
+	ErrCompanyBenefitRequired modelError = "models: cannot update non existent CompanyBenefit"
+	ErrBenefitNameRequired    modelError = "models: benefitName is required"
+	ErrCompanyProfileRequired modelError = "models: cannot add benefit to non existent profile"
 )
 
 type modelError string
