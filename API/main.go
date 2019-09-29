@@ -19,12 +19,12 @@ func main() {
 		"Provide this flag in production. This ensures that a config.json file is provided before the application starts")
 	flag.Parse()
 	appCfg := LoadConfig(*boolPtr)
-	postgresConfig := appCfg.Database
+	databaseConfig := appCfg.Database
 
 	services, err := models.NewServices(
 		models.WithGorm(
-			postgresConfig.Dialect(),
-			postgresConfig.ConnectionInfo()),
+			databaseConfig.Dialect(),
+			databaseConfig.ConnectionInfo()),
 		models.WithLogMode(!appCfg.IsProd()),
 		models.WithUser(appCfg.Pepper, appCfg.HMACKey),
 		models.WithJobPost(),

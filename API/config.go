@@ -28,7 +28,7 @@ func (c PostgressConfig) ConnectionInfo() string {
 		c.Host, c.Port, c.User, c.Password, c.Dbname)
 }
 
-func DefaultPostgressConfig() PostgressConfig {
+func DefaultPostgressConfig() DatabaseConfig {
 	port, err := strconv.Atoi(getEnvVar("PGPORT"))
 	if err != nil {
 		fmt.Println("Could not parse DB port")
@@ -42,13 +42,18 @@ func DefaultPostgressConfig() PostgressConfig {
 	}
 }
 
+type DatabaseConfig interface {
+	Dialect() string
+	ConnectionInfo() string
+}
+
 type Config struct {
-	Port     int             `json:"port"`
-	Env      string          `json:"env"`
-	Pepper   string          `json:"pepper"`
-	HMACKey  string          `json:"hmacKey"`
-	Database PostgressConfig `json:"database"`
-	Mailgun  MailgunConfig   `json:"mailgun"`
+	Port     int            `json:"port"`
+	Env      string         `json:"env"`
+	Pepper   string         `json:"pepper"`
+	HMACKey  string         `json:"hmacKey"`
+	Database DatabaseConfig `json:"-"`
+	Mailgun  MailgunConfig  `json:"mailgun"`
 }
 
 func DefaultConfig() Config {
@@ -78,15 +83,37 @@ func LoadConfig(configRequired bool) Config {
 		fmt.Println("config.json not found, using default config for development")
 		return DefaultConfig()
 	}
+
 	var c Config
 	decoder := json.NewDecoder(f)
 
 	err = decoder.Decode(&c)
+
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Succesfull Loaded config.json")
+	Port, err := strconv.Atoi(getEnvVar("PORT"))
+	databaseUrl := getEnvVar("DATABASE_URL")
+	if err == nil {
+		c.Port = Port
+	}
+	if databaseUrl != "" {
+		c.Database = HerokuPGDatabase{databaseUrl: databaseUrl}
+	}
+	fmt.Println("Successful Loaded config.json")
 	return c
+}
+
+type HerokuPGDatabase struct {
+	databaseUrl string
+}
+
+func (c HerokuPGDatabase) Dialect() string {
+	return "postgres"
+}
+
+func (c HerokuPGDatabase) ConnectionInfo() string {
+	return c.databaseUrl
 }
 
 type MailgunConfig struct {
