@@ -106,7 +106,7 @@ func testUpdateCompanyProfileFields(user *models.User, us models.UserService, t 
 		CompanyLogoUrl: "a logo url",
 	}
 	if err := us.Update(user); err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	got := user.CompanyProfile
 	want := &models.CompanyProfile{
@@ -196,12 +196,16 @@ func testCompanyProfileIsNotNil(t *testing.T, us models.UserService, benefit mod
 }
 
 func testAddCompanyProfileSkill(t *testing.T, ss models.SkillsService, got *models.CompanyProfile) {
+	testAddSkill(t, ss, got)
+}
+
+func testAddSkill(t *testing.T, ss models.SkillsService, got interface{}) {
 	t.Run("add-skill", func(t *testing.T) {
 		skill := models.Skill{}
 		skill.ID = 1
 
 		if err := ss.AddSkillToOwner(got, skill); err != nil {
-			t.Errorf("error adding company profile skill error = %v, companyProfile = %v, skill = %v", err, got, skill)
+			t.Errorf("error adding skill, error = %v, model = %v, skill = %v", err, got, skill)
 		}
 
 		t.Run("SadPath: skill with no ID is not allowed", func(t *testing.T) {
@@ -214,16 +218,21 @@ func testAddCompanyProfileSkill(t *testing.T, ss models.SkillsService, got *mode
 	})
 }
 func testRemoveCompanyProfileSkill(t *testing.T, ss models.SkillsService, got *models.CompanyProfile) {
+	testRemoveSkill(t, ss, got)
+	if len(got.Skills) != 0 {
+		t.Errorf("expected skills list to be empty, but got = %v elements", len(got.Skills))
+	}
+}
+
+func testRemoveSkill(t *testing.T, ss models.SkillsService, got interface{}) {
 	t.Run("remove-skill", func(t *testing.T) {
 		skill := models.Skill{}
 		skill.ID = 1
 
 		if err := ss.DeleteSkillFromOwner(got, skill); err != nil {
-			t.Errorf("error removing company profile skill error = %v, companyProfile = %v, skill = %v", err, got, skill)
+			t.Errorf("error removing skill, error = %v, model = %v, skill = %v", err, got, skill)
 		}
-		if len(got.Skills) != 0 {
-			t.Errorf("expected skills list to be empty, but got = %v elements", len(got.Skills))
-		}
+
 	})
 }
 
@@ -309,7 +318,27 @@ func testJobsService_Delete(jobPostService models.JobPostService) func(t *testin
 
 func testJobsService_Update(jobPostService models.JobPostService, skillsService models.SkillsService) func(t *testing.T) {
 	return func(t *testing.T) {
-		t.Skip()
+		got := findJobByID(jobPostService, 1, t)
+
+		t.Run("Fields", func(t *testing.T) {
+			got.Title = "Golang Dev Wanted 2"
+			got.Description = "Golang Dev Wanted For Backend Development"
+			got.ApplyAt = "samysoft@gmail.com"
+			got.LocationID = 1
+			got.CategoryID = 1
+			if err := jobPostService.Update(got); err != nil {
+				t.Fatal(err)
+			}
+			want := findJobByID(jobPostService, 1, t)
+			compareJobPostsFields(*got, want, t)
+		})
+
+		testAddSkill(t, skillsService, got)
+
+		testRemoveSkill(t, skillsService, got)
+		if len(got.Skills) != 0 {
+			t.Errorf("expected skills list to be empty, but got = %v elements", len(got.Skills))
+		}
 	}
 }
 
@@ -383,19 +412,85 @@ func findJobByID(jobPostService models.JobPostService, id uint, t *testing.T) *m
 	return got
 }
 
+type SadPathCreateTest struct {
+	name            string
+	jobPostModifier func(jp *models.JobPost)
+	expectedError   error
+}
+
 func testJobsService_Create(jobPostService models.JobPostService) func(t *testing.T) {
 	return func(t *testing.T) {
-		newUser := models.JobPost{
-			Title:       "Golang Dev Wanted",
-			Description: "Golang Dev Wanted For API Development",
-			ApplyAt:     "samysoft@gmail.com",
-			UserID:      1,
-			LocationID:  2,
-			CategoryID:  2,
-		}
-		if err := jobPostService.Create(&newUser); err != nil {
+		newJobPost := mockJobPost()
+		if err := jobPostService.Create(&newJobPost); err != nil {
 			t.Error(err)
 		}
+
+		sadPathsTests := []SadPathCreateTest{
+			{
+				name: "user ID is required",
+				jobPostModifier: func(jp *models.JobPost) {
+					jp.UserID = 0
+				},
+				expectedError: models.ErrUserIDRequired,
+			},
+			{
+				name: "Description is required",
+				jobPostModifier: func(jp *models.JobPost) {
+					jp.Description = ""
+				},
+				expectedError: models.ErrDescriptionRequired,
+			},
+			{
+				name: "Title is required",
+				jobPostModifier: func(jp *models.JobPost) {
+					jp.Title = ""
+				},
+				expectedError: models.ErrTitleRequired,
+			},
+			{
+				name: "ApplyAt is required",
+				jobPostModifier: func(jp *models.JobPost) {
+					jp.ApplyAt = ""
+				},
+				expectedError: models.ErrApplyAtRequired,
+			},
+			{
+				name: "LocationID is required",
+				jobPostModifier: func(jp *models.JobPost) {
+					jp.LocationID = 0
+				},
+				expectedError: models.ErrLocationIDRequired,
+			},
+			{
+				name: "CategoryID is required",
+				jobPostModifier: func(jp *models.JobPost) {
+					jp.CategoryID = 0
+				},
+				expectedError: models.ErrCategoryIDRequired,
+			},
+		}
+		for _, spt := range sadPathsTests {
+			t.Run(fmt.Sprintf("SadPath: %s", spt.name), func(t *testing.T) {
+				jp := mockJobPost()
+				spt.jobPostModifier(&jp)
+				wantError := spt.expectedError
+				if err := jobPostService.Create(&jp); err != wantError {
+					t.Errorf("should return %q error got %q error", wantError, err)
+				}
+			})
+		}
+
+	}
+}
+
+func mockJobPost() models.JobPost {
+	return models.JobPost{
+		Title:       "Golang Dev Wanted",
+		Description: "Golang Dev Wanted For API Development",
+		ApplyAt:     "samysoft@gmail.com",
+		UserID:      1,
+		LocationID:  2,
+		CategoryID:  2,
 	}
 }
 
