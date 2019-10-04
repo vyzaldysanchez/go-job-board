@@ -280,6 +280,125 @@ func testUserService_Create(us models.UserService) func(t *testing.T) {
 	}
 }
 
+func TestJobsService(t *testing.T) {
+
+	services, err := models.NewServices(
+		models.WithGorm(
+			Dialect(),
+			ConnectionInfo()),
+		models.WithLogMode(false),
+		models.WithJobPost(),
+		models.WithSkill(),
+	)
+	must(err)
+
+	defer services.Close()
+	must(services.DestructiveReset())
+	t.Run("Create", testJobsService_Create(services.JobPost))
+	t.Run("Find", testJobsService_Find(services.JobPost))
+	t.Run("Update", testJobsService_Update(services.JobPost, services.Skill))
+	t.Run("Delete", testJobsService_Delete(services.JobPost))
+
+}
+
+func testJobsService_Delete(jobPostService models.JobPostService) func(t *testing.T) {
+	return func(t *testing.T) {
+		t.Skip()
+	}
+}
+
+func testJobsService_Update(jobPostService models.JobPostService, skillsService models.SkillsService) func(t *testing.T) {
+	return func(t *testing.T) {
+		t.Skip()
+	}
+}
+
+func testJobsService_Find(jobPostService models.JobPostService) func(t *testing.T) {
+	return func(t *testing.T) {
+		want := models.JobPost{
+			Title:       "Golang Dev Wanted",
+			Description: "Golang Dev Wanted For API Development",
+			ApplyAt:     "samysoft@gmail.com",
+			UserID:      1,
+			LocationID:  2,
+			CategoryID:  2,
+		}
+
+		t.Run("ByID", func(t *testing.T) {
+			want.ID = 1
+			got := findJobByID(jobPostService, want.ID, t)
+			if want.ID != got.ID {
+				t.Fatalf("invalid job retrieved, got job with ID:%v, want job with ID %v", got.ID, want.ID)
+			}
+
+			compareJobPostsFields(want, got, t)
+
+		})
+
+		t.Run("ByUserID", func(t *testing.T) {
+
+			got := findJobsByUserID(jobPostService, want.UserID, t)
+			if len(got) <= 0 {
+				t.Fatalf("expected to find %d job posts for user ID %d, but got %d job posts", 1, want.UserID, len(got))
+			}
+			compareJobPostsFields(want, &got[0], t)
+
+		})
+	}
+}
+
+func compareJobPostsFields(want models.JobPost, got *models.JobPost, t *testing.T) {
+	if want.Title != got.Title {
+		t.Errorf("invalid job Title, got job with Title:%v, want job with Title %v", got.Title, want.Title)
+	}
+	if want.Description != got.Description {
+		t.Errorf("invalid job Description, got job with Description:%v, want job with Description %v", got.Description, want.Description)
+	}
+	if want.ApplyAt != got.ApplyAt {
+		t.Errorf("invalid job ApplyAt, got job with ApplyAt:%v, want job with ApplyAt %v", got.ApplyAt, want.ApplyAt)
+	}
+	if want.LocationID != got.LocationID {
+		t.Errorf("invalid job LocationID, got job with LocationID:%v, want job with LocationID %v", got.LocationID, want.LocationID)
+	}
+	if want.UserID != got.UserID {
+		t.Errorf("invalid job UserID, got job with UserID:%v, want job with UserID %v", got.UserID, want.UserID)
+	}
+	if want.CategoryID != got.CategoryID {
+		t.Errorf("invalid job CategoryID, got job with CategoryID:%v, want job with CategoryID %v", got.CategoryID, want.CategoryID)
+	}
+}
+
+func findJobsByUserID(jobPostService models.JobPostService, id uint, t *testing.T) []models.JobPost {
+	got, err := jobPostService.ByUserID(id)
+	if err != nil {
+		t.Error(err)
+	}
+	return got
+}
+func findJobByID(jobPostService models.JobPostService, id uint, t *testing.T) *models.JobPost {
+	got, err := jobPostService.ByID(id)
+	if err != nil {
+		t.Error(err)
+	}
+	return got
+}
+
+func testJobsService_Create(jobPostService models.JobPostService) func(t *testing.T) {
+	return func(t *testing.T) {
+		newUser := models.JobPost{
+			Title:       "Golang Dev Wanted",
+			Description: "Golang Dev Wanted For API Development",
+			ApplyAt:     "samysoft@gmail.com",
+			UserID:      1,
+			LocationID:  2,
+			CategoryID:  2,
+		}
+		if err := jobPostService.Create(&newUser); err != nil {
+			t.Error(err)
+		}
+	}
+}
+
 func must(err error) {
 	if err != nil {
 		panic(err)
