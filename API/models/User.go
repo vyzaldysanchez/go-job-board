@@ -73,6 +73,11 @@ type UserDB interface {
 // UserService is a set of methods used to manipulate and work
 // with the user model
 type UserService interface {
+	AuthService
+	UserDB
+}
+
+type AuthService interface {
 	// Authenticate will verify if the provided email address and
 	// password are correct. if they are correct, the user
 	// corresponding to that e  mail will be returned. Otherwise
@@ -86,29 +91,14 @@ type UserService interface {
 	// provided email address.
 	InitiateReset(email string) (string, error)
 	CompleteReset(token, newPw string) (*User, error)
-
-	UserDB
 }
-
-func NewUserService(db *gorm.DB, pepper, hmacKey string) UserService {
-	ug := &userGorm{db}
-
-	hmac := hash.NewHMAC(hmacKey)
-	uv := newUserValidator(ug, hmac, pepper)
-	return &userService{
-		UserDB:    uv,
-		pepper:    pepper,
-		pwResetDB: newPwResetValidator(&pwResetGorm{db}, hmac),
-	}
-}
-
-var _ UserService = &userService{}
-
-type userService struct {
+type authService struct {
 	UserDB
 	pepper    string
 	pwResetDB pwResetDB
 }
+
+var _ AuthService = &authService{}
 
 // Authenticate can be used to authenticate a user with the
 // provided email address and password.
@@ -120,12 +110,12 @@ type userService struct {
 // user,nil
 // Otherwise if another error is encountered this will return
 // nil,error
-func (us *userService) Authenticate(email, password string) (*User, error) {
-	foundUser, err := us.ByEmail(email)
+func (as *authService) Authenticate(email, password string) (*User, error) {
+	foundUser, err := as.ByEmail(email)
 	if err != nil {
 		return nil, err
 	}
-	err = bcrypt.CompareHashAndPassword([]byte(foundUser.PasswordHash), []byte(password+us.pepper))
+	err = bcrypt.CompareHashAndPassword([]byte(foundUser.PasswordHash), []byte(password+as.pepper))
 	if err != nil {
 		switch err {
 		case bcrypt.ErrMismatchedHashAndPassword:
@@ -138,8 +128,8 @@ func (us *userService) Authenticate(email, password string) (*User, error) {
 	return foundUser, nil
 }
 
-func (us *userService) InitiateReset(email string) (string, error) {
-	user, err := us.ByEmail(email)
+func (as *authService) InitiateReset(email string) (string, error) {
+	user, err := as.ByEmail(email)
 	if err != nil {
 		return "", err
 	}
@@ -147,13 +137,13 @@ func (us *userService) InitiateReset(email string) (string, error) {
 	pwr := pwReset{
 		UserID: user.ID,
 	}
-	if err := us.pwResetDB.Create(&pwr); err != nil {
+	if err := as.pwResetDB.Create(&pwr); err != nil {
 		return "", err
 	}
 	return pwr.Token, nil
 }
-func (us *userService) CompleteReset(token, newPw string) (*User, error) {
-	pwr, err := us.pwResetDB.ByToken(token)
+func (as *authService) CompleteReset(token, newPw string) (*User, error) {
+	pwr, err := as.pwResetDB.ByToken(token)
 	if err != nil {
 		if err == ErrNotFound {
 			return nil, ErrPwResetInvalid
@@ -166,20 +156,43 @@ func (us *userService) CompleteReset(token, newPw string) (*User, error) {
 		return nil, ErrPwResetInvalid
 	}
 
-	user, err := us.ByID(pwr.UserID)
+	user, err := as.ByID(pwr.UserID)
 
 	if err != nil {
 		return nil, err
 	}
 	user.Password = newPw
-	err = us.Update(user)
+	err = as.Update(user)
 	if err != nil {
 		return nil, err
 	}
 
-	us.pwResetDB.Delete(pwr.ID)
+	as.pwResetDB.Delete(pwr.ID)
 
 	return user, nil
+}
+
+func NewUserService(db *gorm.DB, pepper, hmacKey string) UserService {
+	ug := &userGorm{db}
+
+	hmac := hash.NewHMAC(hmacKey)
+	uv := newUserValidator(ug, hmac, pepper)
+	as := &authService{
+		UserDB:    ug,
+		pepper:    pepper,
+		pwResetDB: newPwResetValidator(&pwResetGorm{db}, hmac),
+	}
+	return &userService{
+		UserDB:      uv,
+		AuthService: as,
+	}
+}
+
+var _ UserService = &userService{}
+
+type userService struct {
+	UserDB
+	AuthService
 }
 
 type userValFunc func(*User) error
@@ -307,7 +320,7 @@ func (uv *userValidator) UpdateCompanyProfileBenefit(benefit *CompanyBenefit) er
 	if benefit.BenefitName == "" {
 		return ErrBenefitNameRequired
 	}
-	
+
 	return uv.UserDB.UpdateCompanyProfileBenefit(benefit)
 }
 
