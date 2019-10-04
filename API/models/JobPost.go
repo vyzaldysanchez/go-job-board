@@ -50,7 +50,7 @@ type jobPostValidator struct {
 func (jpv *jobPostValidator) Create(jobPost *JobPost) error {
 
 	err := runJobPostValFuncs(
-		jobPost, jpv.userIDRequired, jpv.titleRequired, jpv.locationIDRequired, jpv.locationIDRequired, jpv.descriptionRequired, jpv.applyAtRequired)
+		jobPost, jpv.userIDRequired, jpv.titleRequired, jpv.locationIDRequired, jpv.categoryIDRequired, jpv.descriptionRequired, jpv.applyAtRequired)
 
 	if err != nil {
 		return err
@@ -61,7 +61,7 @@ func (jpv *jobPostValidator) Create(jobPost *JobPost) error {
 func (jpv *jobPostValidator) Update(jobPost *JobPost) error {
 
 	err := runJobPostValFuncs(
-		jobPost, jpv.userIDRequired, jpv.titleRequired, jpv.locationIDRequired, jpv.locationIDRequired, jpv.descriptionRequired, jpv.applyAtRequired)
+		jobPost, jpv.userIDRequired, jpv.titleRequired, jpv.locationIDRequired, jpv.categoryIDRequired, jpv.descriptionRequired, jpv.applyAtRequired)
 	if err != nil {
 		return err
 	}
@@ -118,7 +118,7 @@ func (jpv *jobPostValidator) descriptionRequired(jp *JobPost) error {
 
 func (jpv *jobPostValidator) applyAtRequired(jp *JobPost) error {
 	if jp.ApplyAt == "" {
-		return ErrDescriptionRequired
+		return ErrApplyAtRequired
 	}
 
 	return nil
