@@ -312,7 +312,9 @@ func TestJobsService(t *testing.T) {
 
 func testJobsService_Delete(jobPostService models.JobPostService) func(t *testing.T) {
 	return func(t *testing.T) {
-		t.Skip()
+		if err := jobPostService.Delete(1); err != nil {
+			t.Error(err)
+		}
 	}
 }
 
