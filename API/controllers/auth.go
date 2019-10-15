@@ -1,9 +1,12 @@
 package controllers
 
 import (
+	"github.com/gbrlsnchs/jwt/v3"
 	"github.com/samueldaviddelacruz/go-job-board/API/email"
 	"github.com/samueldaviddelacruz/go-job-board/API/models"
+	"io/ioutil"
 	"net/http"
+	"time"
 )
 
 // NewUsers is used to create a new Users controller.
@@ -73,14 +76,14 @@ func (u *Auth) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = u.signIn(w, &companyUser)
+	token, err := u.signIn(w, &companyUser)
 	if err != nil {
 		//u.LoginView.Render(w, r, vd)
 		respondJSON(w, http.StatusInternalServerError, err)
 		return
 	}
-	user2, _ := u.us.ByID(1)
-	respondJSON(w, http.StatusOK, user2)
+	//user2, _ := u.us.ByID(1)
+	respondJSON(w, http.StatusOK, string(token))
 }
 
 // ResetPwForm is used to process the forgot password form
@@ -126,56 +129,57 @@ func (u *Auth) InitiateReset(w http.ResponseWriter, r *http.Request) {
 //
 //POST
 func (u *Auth) CompleteReset(w http.ResponseWriter, r *http.Request) {
-	//var vd views.Data
-	var form ResetPwForm
-	//vd.Yield = &form
-	if err := parseForm(r, &form); err != nil {
-		//vd.SetAlert(err)
-		//u.ResetPwView.Render(w, r, vd)
-		return
-	}
-	user, err := u.us.CompleteReset(form.Token, form.Password)
-	if err != nil {
-		//vd.SetAlert(err)
-		//u.ResetPwView.Render(w, r, vd)
-		return
-	}
-
-	err = u.signIn(w, user)
-	if err != nil {
-		//vd.SetAlert(err)
-		//u.LoginView.Render(w, r, vd)
-		return
-	}
 	/*
-		views.RedirectAlert(w, r, "/galleries", http.StatusFound, views.Alert{
-			Level:   views.AlertLvlSuccess,
-			Message: "Your password has been reset and you have been logged in!",
-		})
+		//var vd views.Data
+		var form ResetPwForm
+		//vd.Yield = &form
+		if err := parseForm(r, &form); err != nil {
+			//vd.SetAlert(err)
+			//u.ResetPwView.Render(w, r, vd)
+			return
+		}
+		user, err := u.us.CompleteReset(form.Token, form.Password)
+		if err != nil {
+			//vd.SetAlert(err)
+			//u.ResetPwView.Render(w, r, vd)
+			return
+		}
+
+		err = u.signIn(w, user)
+		if err != nil {
+			//vd.SetAlert(err)
+			//u.LoginView.Render(w, r, vd)
+			return
+		}
+
+			views.RedirectAlert(w, r, "/galleries", http.StatusFound, views.Alert{
+				Level:   views.AlertLvlSuccess,
+				Message: "Your password has been reset and you have been logged in!",
+			})
 	*/
 }
 
-func (u *Auth) signIn(w http.ResponseWriter, user *models.User) error {
-	/*
-		if user.Remember == "" {
-			token, err := rand.RememberToken()
-			if err != nil {
-				return err
-			}
-			user.Remember = token
+func (u *Auth) signIn(w http.ResponseWriter, user *models.User) ([]byte, error) {
+	privateKey, _ := ioutil.ReadFile("./key.priv")
+	var hs = jwt.NewHS256(privateKey)
+	now := time.Now()
+	oneYear := 24 * 30 * 12 * time.Hour
+	pl := models.CustomPayload{
+		Payload: jwt.Payload{
+			Issuer: "Go JobBoard",
+			//Subject:        "someone",
+			//Audience:       jwt.Audience{"https://golang.org", "https://jwt.io"},
+			ExpirationTime: jwt.NumericDate(now.Add(oneYear)),
+			NotBefore:      jwt.NumericDate(now.Add(30 * time.Minute)),
+			IssuedAt:       jwt.NumericDate(now),
+		},
+		Email: user.Email,
+	}
 
-			err = u.us.Update(user)
-			if err != nil {
-				return err
-			}
-		}
-
-		cookie := http.Cookie{
-			Name:     "remember_token",
-			Value:    user.Remember,
-			HttpOnly: true,
-		}
-		http.SetCookie(w, &cookie)
-	*/
-	return nil
+	token, err := jwt.Sign(pl, hs)
+	if err != nil {
+		return nil, err
+	}
+	//jwt := jws.NewJWT()
+	return token, nil
 }

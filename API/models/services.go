@@ -103,7 +103,7 @@ func (s *Services) AutoMigrate() error {
 	return runPopulatingFuncs(s.seedRoles, s.seedLocations, s.seedCategories, s.seedSkills)
 }
 func (s *Services) seedRoles() error {
-	return s.db.Model(&Role{}).Create(&Role{RoleName: "Company"}).Create(&Role{RoleName: "Candidate"}).Error
+	return s.db.Model(&Role{}).Create(&Role{RoleName: "User"}).Create(&Role{RoleName: "Candidate"}).Error
 }
 
 func (s *Services) seedLocations() error {

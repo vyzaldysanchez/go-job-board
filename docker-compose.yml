@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 services:
   postgres_test:
     image: 'postgres:latest'
@@ -16,11 +16,12 @@ services:
     ports:
       - '3050:80'
   api:
+    depends_on:
+      - postgres
     build:
       dockerfile: Dockerfile.dev
       context: ./API
     volumes:
-      - /app/node_modules
       - ./API:/app
     environment:
       - PGUSER=postgres
@@ -29,6 +30,8 @@ services:
       - PGPASSWORD=postgres_password
       - PGPORT=5432
   client:
+    depends_on:
+      - api
     build:
       dockerfile: Dockerfile.dev
       context: ./Client

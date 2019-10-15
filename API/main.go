@@ -3,13 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/samueldaviddelacruz/go-job-board/API/middleware"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/samueldaviddelacruz/go-job-board/API/controllers"
 	"github.com/samueldaviddelacruz/go-job-board/API/email"
 
-	"github.com/samueldaviddelacruz/go-job-board/API/middleware"
 	"github.com/samueldaviddelacruz/go-job-board/API/models"
 )
 
@@ -49,16 +50,13 @@ func main() {
 
 	usersC := controllers.NewUsers(services.User, services.Skill)
 	authC := controllers.NewAuth(services.User, emailer)
+	privateKey, err := ioutil.ReadFile("./key.priv")
 	must(err)
 
-	userMw := middleware.Company{
-		UserService: services.User,
+	requireJWT := middleware.RequireJWT{
+		Secret: string(privateKey),
 	}
-	/*
-		requireUserMw := middleware.RequireUser{
-			Company: userMw,
-		}
-	*/
+
 	applyRoutes(r,
 		Route{
 			path:    "/signup",
@@ -77,7 +75,7 @@ func main() {
 		},
 		Route{
 			path:    "/user/{id:[0-9]+}/company-profile",
-			handler: usersC.UpdateCompanyProfile,
+			handler: requireJWT.ApplyFn(usersC.UpdateCompanyProfile),
 			method:  "PUT",
 		},
 		Route{
@@ -138,7 +136,7 @@ func main() {
 	)
 
 	fmt.Printf("Running on port :%d", appCfg.Port)
-	must(http.ListenAndServe(fmt.Sprintf(":%d", appCfg.Port), userMw.Apply(r)))
+	must(http.ListenAndServe(fmt.Sprintf(":%d", appCfg.Port), r))
 }
 
 type Route struct {
