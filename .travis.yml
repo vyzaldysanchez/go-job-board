@@ -27,6 +27,8 @@ after_success:
 
 deploy:
   provider: script
-  script: bash heroku_push_and_release
+  script: 
+    docker push go-job-board/api;
+    heroku container:release web -a $HEROKU_API_APP_NAME;
   on:
     branch: master
