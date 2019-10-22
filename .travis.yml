@@ -8,6 +8,7 @@ before_install:
   - psql -c 'create database job_board_test;' -U postgres
   - docker build -t go-job-board/api-test -f ./API/Dockerfile.dev ./API
 
+# --net=host allows docker to communicate with services on the host
 script:
   - docker run --env env=CI -it --net=host go-job-board/api-test go test ./tests -v
 
@@ -15,9 +16,20 @@ after_success:
   - docker build -t go-job-board/client ./Client
   - docker build -t go-job-board/nginx ./nginx
   - docker build -t go-job-board/api ./API
-  # Log in to the docker CLI
+
+  # install heroku CLI
+  - wget -qO- https://toolbelt.heroku.com/install.sh | sh
+  # Log in to the docker CLI pointing to the heroku registry
   - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin registry.heroku.com
   # Take those images and push them to docker hub
-  - docker push go-job-board/client
-  - docker push go-job-board/nginx
-  - docker push go-job-board/api
+  #- docker push go-job-board/client
+  #- docker push go-job-board/nginx
+
+deploy:
+  provider: script
+  script: 
+    # push to dockerhub & heroku
+    - docker push go-job-board/api
+    - heroku container:release web -a $HEROKU_API_APP_NAME
+  on:
+    branch: master
