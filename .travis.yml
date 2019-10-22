@@ -13,8 +13,8 @@ script:
   - docker run --env env=CI -it --net=host go-job-board/api-test go test ./tests -v
 
 after_success:
-  - docker build -t go-job-board/client ./Client
-  - docker build -t go-job-board/nginx ./nginx
+  #- docker build -t go-job-board/client ./Client
+  #- docker build -t go-job-board/nginx ./nginx
   - docker build -t go-job-board/api ./API
 
   # install heroku CLI
