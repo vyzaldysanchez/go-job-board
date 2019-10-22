@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/samueldaviddelacruz/go-job-board/API/middleware"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -50,11 +49,11 @@ func main() {
 
 	usersC := controllers.NewUsers(services.User, services.Skill)
 	authC := controllers.NewAuth(services.User, emailer)
-	privateKey, err := ioutil.ReadFile("./key.priv")
+	
 	must(err)
 
 	requireJWT := middleware.RequireJWT{
-		Secret: string(privateKey),
+		Secret: appCfg.HMACKey,
 	}
 
 	applyRoutes(r,
