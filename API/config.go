@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -66,31 +65,11 @@ func DefaultConfig() Config {
 	}
 }
 
-func (c Config) IsProd() bool {
-	return c.Env == "prod"
-}
-
-func LoadConfig(configRequired bool) Config {
-	if !configRequired {
-		fmt.Println("config.json not required, using default config for development")
-		return DefaultConfig()
-	}
-	f, err := os.Open("config.json")
-	if err != nil {
-		if configRequired {
-			panic(err)
-		}
-		fmt.Println("config.json not found, using default config for development")
-		return DefaultConfig()
-	}
-
-	var c Config
-	decoder := json.NewDecoder(f)
-
-	err = decoder.Decode(&c)
-
-	if err != nil {
-		panic(err)
+func ProdConfig() Config {
+	c := Config{
+		Env:     "prod",
+		Pepper:  getEnvVar("PASSWORD_PEPPER"),
+		HMACKey: getEnvVar("HMAC_KEY"),
 	}
 	Port, err := strconv.Atoi(getEnvVar("PORT"))
 	databaseUrl := getEnvVar("DATABASE_URL")
@@ -100,8 +79,20 @@ func LoadConfig(configRequired bool) Config {
 	if databaseUrl != "" {
 		c.Database = HerokuPGDatabase{databaseUrl: databaseUrl}
 	}
-	fmt.Println("Successful Loaded config.json")
 	return c
+}
+
+func (c Config) IsProd() bool {
+	return c.Env == "prod"
+}
+
+func LoadConfig(isProd bool) Config {
+	if !isProd {
+		fmt.Println("config.json not required, using default config for development")
+		return DefaultConfig()
+	}
+
+	return ProdConfig()
 }
 
 type HerokuPGDatabase struct {
