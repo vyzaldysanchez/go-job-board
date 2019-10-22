@@ -20,7 +20,7 @@ after_success:
   # install heroku CLI
   - wget -qO- https://toolbelt.heroku.com/install.sh | sh
   # Log in to the docker CLI pointing to the heroku registry
-  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin registry.heroku.com
+  - echo "$HEROKU_API_KEY" | docker login -u "$DOCKER_USERNAME" --password-stdin registry.heroku.com
   # Take those images and push them to docker hub
   #- docker push go-job-board/client
   #- docker push go-job-board/nginx
