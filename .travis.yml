@@ -16,6 +16,7 @@ after_success:
   #- docker build -t go-job-board/client ./Client
   #- docker build -t go-job-board/nginx ./nginx
   - docker build -t go-job-board/api ./API
+  - docker tag go-job-board/api registry.heroku.com/$HEROKU_API_APP_NAME/web
 
   # install heroku CLI
   - wget -qO- https://toolbelt.heroku.com/install.sh | sh
@@ -29,6 +30,6 @@ deploy:
   provider: script
   script: 
     docker push go-job-board/api;
-    heroku container:release web -a $HEROKU_API_APP_NAME;
+    docker push registry.heroku.com/$HEROKU_API_APP_NAME/web;
   on:
     branch: master
