@@ -1,0 +1,3 @@
+#!/bin/bash
+docker push go-job-board/api
+heroku container:release web -a $HEROKU_API_APP_NAME
