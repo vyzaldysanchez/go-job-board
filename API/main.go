@@ -70,7 +70,7 @@ func main() {
 		},
 		Route{
 			path:    "/user/{id:[0-9]+}",
-			handler: usersC.Update,
+			handler: requireJWT.ApplyFn(usersC.Update),
 			method:  "PUT",
 		},
 		Route{
@@ -80,27 +80,27 @@ func main() {
 		},
 		Route{
 			path:    "/user/{id:[0-9]+}/company-profile/add-skill",
-			handler: usersC.AddCompanyProfileSkill,
+			handler: requireJWT.ApplyFn(usersC.AddCompanyProfileSkill),
 			method:  "PUT",
 		},
 		Route{
 			path:    "/user/{id:[0-9]+}/company-profile/remove-skill",
-			handler: usersC.RemoveCompanyProfileSkill,
+			handler: requireJWT.ApplyFn(usersC.RemoveCompanyProfileSkill),
 			method:  "PUT",
 		},
 		Route{
 			path:    "/user/{id:[0-9]+}/company-profile/add-benefit",
-			handler: usersC.AddCompanyProfileBenefit,
+			handler: requireJWT.ApplyFn(usersC.AddCompanyProfileBenefit),
 			method:  "PUT",
 		},
 		Route{
 			path:    "/user/{id:[0-9]+}/company-profile/remove-benefit",
-			handler: usersC.RemoveCompanyProfileBenefit,
+			handler: requireJWT.ApplyFn(usersC.RemoveCompanyProfileBenefit),
 			method:  "PUT",
 		},
 		Route{
 			path:    "/user/{id:[0-9]+}/company-profile/update-benefit",
-			handler: usersC.UpdateCompanyProfileBenefit,
+			handler: requireJWT.ApplyFn(usersC.UpdateCompanyProfileBenefit),
 			method:  "PUT",
 		},
 		Route{
@@ -110,27 +110,27 @@ func main() {
 		},
 		Route{
 			path:    "/jobs",
-			handler: jobsC.Create,
+			handler: requireJWT.ApplyFn(jobsC.Create),
 			method:  "POST",
 		},
 		Route{
 			path:    "/jobs/{id:[0-9]+}",
-			handler: jobsC.Update,
+			handler: requireJWT.ApplyFn(jobsC.Update),
 			method:  "PUT",
 		},
 		Route{
 			path:    "/jobs/{id:[0-9]+}",
-			handler: jobsC.Delete,
+			handler: requireJWT.ApplyFn(jobsC.Delete),
 			method:  "DELETE",
 		},
 		Route{
 			path:    "/jobs/{id:[0-9]+}/add-skill",
-			handler: jobsC.AddJobPostSkill,
+			handler: requireJWT.ApplyFn(jobsC.AddJobPostSkill),
 			method:  "PUT",
 		},
 		Route{
 			path:    "/jobs/{id:[0-9]+}/remove-skill",
-			handler: jobsC.RemoveJobPostSkill,
+			handler: requireJWT.ApplyFn(jobsC.RemoveJobPostSkill),
 			method:  "PUT",
 		},
 	)
