@@ -31,5 +31,6 @@ deploy:
   script: 
     docker push go-job-board/api;
     docker push registry.heroku.com/$HEROKU_API_APP_NAME/web;
+    heroku container:release web --app $HEROKU_API_APP_NAME;
   on:
     branch: master
