@@ -30,6 +30,7 @@ func main() {
 		models.WithJobPost(),
 		models.WithSkill(),
 		models.WithOAuth(),
+		models.WithCategory(),
 	)
 	must(err)
 
@@ -46,10 +47,10 @@ func main() {
 	r := mux.NewRouter()
 
 	jobsC := controllers.NewJobs(services.JobPost, services.Skill)
-
+	categoriesC := controllers.NewCategories(services.Category)
 	usersC := controllers.NewUsers(services.User, services.Skill)
 	authC := controllers.NewAuth(services.User, emailer)
-	
+
 	must(err)
 
 	requireJWT := middleware.RequireJWT{
@@ -131,6 +132,11 @@ func main() {
 			path:    "/jobs/{id:[0-9]+}/remove-skill",
 			handler: requireJWT.ApplyFn(jobsC.RemoveJobPostSkill),
 			method:  "PUT",
+		},
+		Route{
+			path:    "/categories",
+			handler: categoriesC.List,
+			method:  "GET",
 		},
 	)
 
