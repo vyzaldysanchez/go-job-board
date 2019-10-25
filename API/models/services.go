@@ -42,6 +42,12 @@ func WithCategory() ServicesConfig {
 		return nil
 	}
 }
+func WithLocation() ServicesConfig {
+	return func(s *Services) error {
+		s.Location = NewLocationService(s.db)
+		return nil
+	}
+}
 
 func WithSkill() ServicesConfig {
 
@@ -80,6 +86,7 @@ func NewServices(cfgs ...ServicesConfig) (*Services, error) {
 type Services struct {
 	JobPost  JobPostService
 	Category CategoryService
+	Location LocationService
 	User     UserService
 	Skill    SkillsService
 	OAuth    OAuthService
