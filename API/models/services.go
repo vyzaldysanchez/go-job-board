@@ -36,6 +36,13 @@ func WithJobPost() ServicesConfig {
 	}
 }
 
+func WithCategory() ServicesConfig {
+	return func(s *Services) error {
+		s.Category = NewCategoryService(s.db)
+		return nil
+	}
+}
+
 func WithSkill() ServicesConfig {
 
 	return func(s *Services) error {
@@ -71,11 +78,12 @@ func NewServices(cfgs ...ServicesConfig) (*Services, error) {
 }
 
 type Services struct {
-	JobPost JobPostService
-	User    UserService
-	Skill   SkillsService
-	OAuth   OAuthService
-	db      *gorm.DB
+	JobPost  JobPostService
+	Category CategoryService
+	User     UserService
+	Skill    SkillsService
+	OAuth    OAuthService
+	db       *gorm.DB
 }
 
 // Close closes the database connection
