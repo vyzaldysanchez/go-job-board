@@ -31,6 +31,7 @@ func main() {
 		models.WithSkill(),
 		models.WithOAuth(),
 		models.WithCategory(),
+		models.WithLocation(),
 	)
 	must(err)
 
@@ -48,6 +49,7 @@ func main() {
 
 	jobsC := controllers.NewJobs(services.JobPost, services.Skill)
 	categoriesC := controllers.NewCategories(services.Category)
+	locationsC := controllers.NewLocations(services.Location)
 	usersC := controllers.NewUsers(services.User, services.Skill)
 	authC := controllers.NewAuth(services.User, emailer)
 
@@ -136,6 +138,11 @@ func main() {
 		Route{
 			path:    "/categories",
 			handler: categoriesC.List,
+			method:  "GET",
+		},
+		Route{
+			path:    "/locations",
+			handler: locationsC.List,
 			method:  "GET",
 		},
 	)
