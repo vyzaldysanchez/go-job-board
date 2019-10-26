@@ -310,6 +310,72 @@ func TestJobsService(t *testing.T) {
 
 }
 
+func TestLocationsService(t *testing.T) {
+
+	services, err := models.NewServices(
+		models.WithGorm(
+			Dialect(),
+			ConnectionInfo()),
+		models.WithLogMode(false),
+		models.WithLocation(),
+	)
+	must(err)
+
+	defer services.Close()
+	must(services.DestructiveReset())
+
+	t.Run("Find", testLocationsService_Find(services.Location, services.GetLocationsSeed))
+}
+
+func testLocationsService_Find(ls models.LocationService, getLocationsSeed func() []models.Location) func(t *testing.T) {
+	return func(t *testing.T) {
+		t.Run("FindAll", func(t *testing.T) {
+			want := len(getLocationsSeed())
+			got, err := ls.FindAll()
+			if err != nil {
+				t.Fatalf("locations could not be fetched error: %s", err.Error())
+			}
+			if len(got) <= 0 {
+				t.Fatalf("expected to find %d locations but got %d locations", want, len(got))
+			}
+
+		})
+	}
+}
+
+func TestCategoriesService(t *testing.T) {
+
+	services, err := models.NewServices(
+		models.WithGorm(
+			Dialect(),
+			ConnectionInfo()),
+		models.WithLogMode(false),
+		models.WithCategory(),
+	)
+	must(err)
+
+	defer services.Close()
+	must(services.DestructiveReset())
+
+	t.Run("Find", testCategoriesService_Find(services.Category, services.GetCategoriesSeed))
+}
+
+func testCategoriesService_Find(cs models.CategoryService, getCategoriesSeed func() []models.Category) func(t *testing.T) {
+	return func(t *testing.T) {
+		t.Run("FindAll", func(t *testing.T) {
+			want := len(getCategoriesSeed())
+			got, err := cs.FindAll()
+			if err != nil {
+				t.Fatalf("categories could not be fetched error: %s", err.Error())
+			}
+			if len(got) <= 0 {
+				t.Fatalf("expected to find %d categories but got %d categories", want, len(got))
+			}
+
+		})
+	}
+}
+
 func testJobsService_Delete(jobPostService models.JobPostService) func(t *testing.T) {
 	return func(t *testing.T) {
 		if err := jobPostService.Delete(1); err != nil {

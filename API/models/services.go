@@ -122,20 +122,39 @@ func (s *Services) seedRoles() error {
 }
 
 func (s *Services) seedLocations() error {
-	return s.db.Model(&Location{}).
-		Create(&Location{LocationName: "USA"}).
-		Create(&Location{LocationName: "Canada"}).
-		Create(&Location{LocationName: "Europe"}).
-		Create(&Location{LocationName: "Remote"}).Error
+	db := s.db.Model(&Location{})
+	locationsSeed := s.GetLocationsSeed()
+	for _, c := range locationsSeed {
+		db = db.Create(&c)
+	}
+	return db.Error
 }
 
+func (s *Services) GetLocationsSeed() []Location {
+	return []Location{
+		Location{LocationName: "USA"},
+		Location{LocationName: "Canada"},
+		Location{LocationName: "Europe"},
+		Location{LocationName: "Remote"},
+	}
+}
+
+func (s *Services) GetCategoriesSeed() []Category {
+	return []Category{
+		Category{CategoryName: "Web Development"},
+		Category{CategoryName: "Mobile Development"},
+		Category{CategoryName: "QA"},
+		Category{CategoryName: "DBA"},
+		Category{CategoryName: "DevOps"},
+	}
+}
 func (s *Services) seedCategories() error {
-	return s.db.Model(&Category{}).
-		Create(&Category{CategoryName: "Web Development"}).
-		Create(&Category{CategoryName: "Mobile Development"}).
-		Create(&Category{CategoryName: "QA"}).
-		Create(&Category{CategoryName: "DBA"}).
-		Create(&Category{CategoryName: "DevOps"}).Error
+	db := s.db.Model(&Category{})
+	categoriesSeed := s.GetCategoriesSeed()
+	for _, c := range categoriesSeed {
+		db = db.Create(&c)
+	}
+	return db.Error
 }
 func (s *Services) seedSkills() error {
 	return s.db.Model(&Skill{}).
