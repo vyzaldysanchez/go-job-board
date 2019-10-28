@@ -23,7 +23,22 @@ func NewJobs(js models.JobPostService, ss models.SkillsService) *Jobs {
 
 // GET /jobs
 func (j *Jobs) List(w http.ResponseWriter, r *http.Request) {
-	jobs, err := j.js.FindAll()
+	testJ := models.JobPost{
+		UserID:      0,
+		Title:       r.URL.Query().Get("q"),
+		Location:    nil,
+		LocationID:  0,
+		Category:    nil,
+		CategoryID:  0,
+		Description: "",
+		ApplyAt:     "",
+		Skills:      nil,
+	}
+	if locationId, err := strconv.Atoi(r.URL.Query().Get("l")); err == nil {
+		testJ.LocationID = uint(locationId)
+	}
+	//jobs, err := j.js.FindAll()
+	jobs, err := j.js.FindByParameters(&testJ)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, err)
 		return
@@ -70,6 +85,7 @@ func (j *Jobs) Update(w http.ResponseWriter, r *http.Request) {
 func (j *Jobs) Delete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
+
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, "Could not delete jobPost")
 		return

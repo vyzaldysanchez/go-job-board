@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"github.com/jinzhu/gorm"
 )
 
@@ -36,6 +37,7 @@ func NewJobPostService(db *gorm.DB) JobPostService {
 
 type JobPostDB interface {
 	FindAll() ([]JobPost, error)
+	FindByParameters(params *JobPost) ([]JobPost, error)
 	ByUserID(id uint) ([]JobPost, error)
 	ByID(id uint) (*JobPost, error)
 	Create(jobPost *JobPost) error
@@ -162,6 +164,18 @@ func (jpg *jobPostGorm) ByID(id uint) (*JobPost, error) {
 
 	return &jobPost, err
 
+}
+
+func (jpg *jobPostGorm) FindByParameters(params *JobPost) ([]JobPost, error) {
+
+	var jobPosts []JobPost
+	db := jpg.db.Set("gorm:auto_preload", true)
+	db = db.Where("title LIKE ?", fmt.Sprintf("%%%s%%", params.Title))
+	params.Title = ""
+
+	err := db.Where(params).Find(&jobPosts).Error
+
+	return jobPosts, err
 }
 
 func (jpg *jobPostGorm) ByUserID(id uint) ([]JobPost, error) {

@@ -26,8 +26,6 @@ func (mw *RequireJWT) ApplyFn(next http.HandlerFunc) http.HandlerFunc {
 
 		_, err := jwt.Verify([]byte(token), hs, &pl)
 		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
