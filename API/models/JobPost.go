@@ -3,6 +3,7 @@ package models
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
+	"strings"
 )
 
 // JobPost represents a job post
@@ -170,7 +171,7 @@ func (jpg *jobPostGorm) FindByParameters(params *JobPost) ([]JobPost, error) {
 
 	var jobPosts []JobPost
 	db := jpg.db.Set("gorm:auto_preload", true)
-	db = db.Where("title LIKE ?", fmt.Sprintf("%%%s%%", params.Title))
+	db = db.Where("UPPER(title) LIKE ?", fmt.Sprintf("%%%s%%", strings.ToUpper(params.Title)))
 	params.Title = ""
 
 	err := db.Where(params).Find(&jobPosts).Error
