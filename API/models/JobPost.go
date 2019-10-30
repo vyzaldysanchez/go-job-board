@@ -37,8 +37,7 @@ func NewJobPostService(db *gorm.DB) JobPostService {
 }
 
 type JobPostDB interface {
-	FindAll() ([]JobPost, error)
-	FindByParameters(params *JobPost) ([]JobPost, error)
+	FindAll(filters *JobPost) ([]JobPost, error)
 	ByUserID(id uint) ([]JobPost, error)
 	ByID(id uint) (*JobPost, error)
 	Create(jobPost *JobPost) error
@@ -133,14 +132,23 @@ type jobPostGorm struct {
 	db *gorm.DB
 }
 
-func (jpg *jobPostGorm) FindAll() ([]JobPost, error) {
+func (jpg *jobPostGorm) FindAll(filters *JobPost) ([]JobPost, error) {
 	var jobPosts []JobPost
-	err := jpg.db.Set("gorm:auto_preload", true).Find(&jobPosts).Error
-	if err != nil {
-		return nil, err
+	db := jpg.db.Set("gorm:auto_preload", true)
+	db = db.Where("UPPER(title) LIKE ?", fmt.Sprintf("%%%s%%", strings.ToUpper(filters.Title)))
+	filters.Title = ""
+	if len(filters.Skills) != 0 {
+		var skillIds []int64
+		for _, skill := range filters.Skills {
+			skillIds = append(skillIds, int64(skill.ID))
+		}
+		db = db.Joins("JOIN job_post_skills ON job_post_skills.job_post_id = job_posts.id AND job_post_skills.skill_id IN (?)", skillIds)
+		filters.Skills = nil
 	}
 
-	return jobPosts, nil
+	err := db.Where(filters).Find(&jobPosts).Error
+
+	return jobPosts, err
 }
 
 // Create will create the provided jobPost and backfill data
@@ -165,18 +173,6 @@ func (jpg *jobPostGorm) ByID(id uint) (*JobPost, error) {
 
 	return &jobPost, err
 
-}
-
-func (jpg *jobPostGorm) FindByParameters(params *JobPost) ([]JobPost, error) {
-
-	var jobPosts []JobPost
-	db := jpg.db.Set("gorm:auto_preload", true)
-	db = db.Where("UPPER(title) LIKE ?", fmt.Sprintf("%%%s%%", strings.ToUpper(params.Title)))
-	params.Title = ""
-
-	err := db.Where(params).Find(&jobPosts).Error
-
-	return jobPosts, err
 }
 
 func (jpg *jobPostGorm) ByUserID(id uint) ([]JobPost, error) {

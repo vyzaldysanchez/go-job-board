@@ -164,7 +164,7 @@ func (s *Services) seedSkills() error {
 
 // DestructiveReset drops the all tables and rebuilds them
 func (s *Services) DestructiveReset() error {
-	err := s.db.DropTableIfExists(
+	err := s.db.Exec("DROP TABLE job_post_skills;").DropTableIfExists(
 		&User{},
 		&Role{},
 		&JobPost{},
