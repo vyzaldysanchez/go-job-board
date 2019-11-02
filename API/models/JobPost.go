@@ -37,7 +37,7 @@ func NewJobPostService(db *gorm.DB) JobPostService {
 }
 
 type JobPostDB interface {
-	FindAll(filters *JobPost) ([]JobPost, error)
+	FindAll(filters JobPost) ([]JobPost, error)
 	ByUserID(id uint) ([]JobPost, error)
 	ByID(id uint) (*JobPost, error)
 	Create(jobPost *JobPost) error
@@ -132,7 +132,7 @@ type jobPostGorm struct {
 	db *gorm.DB
 }
 
-func (jpg *jobPostGorm) FindAll(filters *JobPost) ([]JobPost, error) {
+func (jpg *jobPostGorm) FindAll(filters JobPost) ([]JobPost, error) {
 	var jobPosts []JobPost
 	db := jpg.db.Set("gorm:auto_preload", true)
 	db = db.Where("UPPER(title) LIKE ?", fmt.Sprintf("%%%s%%", strings.ToUpper(filters.Title)))

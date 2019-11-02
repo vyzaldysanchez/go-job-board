@@ -37,7 +37,7 @@ func (j *Jobs) List(w http.ResponseWriter, r *http.Request) {
 	}
 	queryObj.Skills = extractSkillsFromQueryStr(r)
 
-	jobs, err := j.js.FindAll(&queryObj)
+	jobs, err := j.js.FindAll(queryObj)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, err)
 		return

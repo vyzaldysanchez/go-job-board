@@ -420,7 +420,88 @@ func testJobsService_Find(jobPostService models.JobPostService) func(t *testing.
 			LocationID:  2,
 			CategoryID:  2,
 		}
+		t.Run("FilterBy", func(t *testing.T) {
+			newSkill := models.Skill{}
+			newSkill.ID = 1
+			mockJobPosts := []models.JobPost{
+				{
+					Title:       "Golang Dev Vue",
+					Description: "Golang Dev Wanted",
+					ApplyAt:     "samysoft@gmail.com",
+					UserID:      1,
+					LocationID:  1,
+					CategoryID:  2,
+				},
+				{
+					Title:       "Golang Dev React",
+					Description: "Golang Dev Wanted",
+					ApplyAt:     "samysoft@gmail.com",
+					UserID:      1,
+					LocationID:  2,
+					CategoryID:  2,
+				},
+				{
+					Title:       "Golang Dev With Skills",
+					Description: "Golang Dev Wanted",
+					ApplyAt:     "samysoft@gmail.com",
+					UserID:      1,
+					LocationID:  1,
+					CategoryID:  2,
+					Skills: []models.Skill{
+						newSkill,
+					},
+				},
+			}
+			for _, newJobPost := range mockJobPosts {
+				if err := jobPostService.Create(&newJobPost); err != nil {
+					t.Error(err)
+				}
+			}
 
+			t.Run("Title", func(t *testing.T) {
+				want := mockJobPosts[0]
+				got, err := jobPostService.FindAll(want)
+				if err != nil {
+					t.Error(err)
+				}
+				if len(got) <= 0 {
+					t.Fatalf("expected to find %d job posts, but got %d job posts", 1, len(got))
+				}
+				compareJobPostsFields(want, &got[0], t)
+			})
+			t.Run("LocationAndCategory", func(t *testing.T) {
+				want := mockJobPosts[1]
+				got, err := jobPostService.FindAll(want)
+				if err != nil {
+					t.Error(err)
+				}
+				if len(got) <= 0 {
+					t.Fatalf("expected to find %d job posts, but got %d job posts", 1, len(got))
+				}
+
+				compareJobPostsFields(want, &got[0], t)
+			})
+			t.Run("Skills", func(t *testing.T) {
+				want := mockJobPosts[2]
+				got, err := jobPostService.FindAll(want)
+				if err != nil {
+					t.Error(err)
+				}
+				if len(got) <= 0 {
+					t.Fatalf("expected to find %d job posts, but got %d job posts", 1, len(got))
+				}
+				compareJobPostsFields(want, &got[0], t)
+				if len(got[0].Skills) != len(want.Skills) {
+					t.Fatalf("expected to find %d skills, but got %d skills", len(want.Skills), len(got[0].Skills))
+				}
+				for index, sk := range got[0].Skills {
+					if sk.ID != want.Skills[index].ID {
+						t.Errorf("expected skills id to match, want %d got %d ", want.Skills[index].ID, sk.ID)
+					}
+				}
+			})
+
+		})
 		t.Run("ByID", func(t *testing.T) {
 			want.ID = 1
 			got := findJobByID(jobPostService, want.ID, t)
