@@ -111,8 +111,9 @@ func main() {
 			method:  "GET",
 		},
 		Route{
-			path:    "/jobs",
-			handler: requireJWT.ApplyFn(jobsC.Create),
+			path: "/jobs",
+			//handler: requireJWT.ApplyFn(jobsC.Create),
+			handler: jobsC.Create,
 			method:  "POST",
 		},
 		Route{

@@ -37,7 +37,11 @@ func (u *Users) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parseJSON(w, r, companyUser)
+	err = parseJSON(r, companyUser)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	if err := u.us.Update(companyUser); err != nil {
 		//vd.SetAlert(err)
@@ -56,7 +60,11 @@ func (u *Users) UpdateCompanyProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	newCompanyProfile := &models.CompanyProfile{}
-	parseJSON(w, r, newCompanyProfile)
+	err = parseJSON(r, newCompanyProfile)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	if companyUser.CompanyProfile == nil {
 		companyUser.CompanyProfile = &models.CompanyProfile{}
 	}
@@ -81,7 +89,11 @@ func (u *Users) AddCompanyProfileSkill(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	skill := models.Skill{}
-	parseJSON(w, r, &skill)
+	err = parseJSON(r, &skill)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	if companyUser.CompanyProfile != nil {
 		if err := u.ss.AddSkillToOwner(companyUser.CompanyProfile, skill); err != nil {
 			respondJSON(w, http.StatusInternalServerError, err.Error())
@@ -99,7 +111,11 @@ func (u *Users) RemoveCompanyProfileSkill(w http.ResponseWriter, r *http.Request
 		return
 	}
 	skill := models.Skill{}
-	parseJSON(w, r, &skill)
+	err = parseJSON(r, &skill)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	if companyUser.CompanyProfile != nil {
 		if err := u.ss.DeleteSkillFromOwner(companyUser.CompanyProfile, skill); err != nil {
 			respondJSON(w, http.StatusInternalServerError, err.Error())
@@ -118,7 +134,11 @@ func (u *Users) AddCompanyProfileBenefit(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	benefit := models.CompanyBenefit{}
-	parseJSON(w, r, &benefit)
+	err = parseJSON(r, &benefit)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	if companyUser.CompanyProfile != nil {
 		if err := u.us.AddCompanyProfileBenefit(companyUser.CompanyProfile, benefit); err != nil {
 			respondJSON(w, http.StatusInternalServerError, err.Error())
@@ -137,7 +157,11 @@ func (u *Users) RemoveCompanyProfileBenefit(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	benefit := models.CompanyBenefit{}
-	parseJSON(w, r, &benefit)
+	err = parseJSON(r, &benefit)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	if companyUser.CompanyProfile != nil {
 		if err := u.us.RemoveCompanyProfileBenefit(companyUser.CompanyProfile, benefit); err != nil {
 			respondJSON(w, http.StatusInternalServerError, err.Error())
@@ -156,7 +180,11 @@ func (u *Users) UpdateCompanyProfileBenefit(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	benefit := &models.CompanyBenefit{}
-	parseJSON(w, r, benefit)
+	err = parseJSON(r, benefit)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	if companyUser.CompanyProfile != nil {
 		benefit.CompanyProfileID = companyUser.CompanyProfile.ID
 		if err := u.us.UpdateCompanyProfileBenefit(benefit); err != nil {

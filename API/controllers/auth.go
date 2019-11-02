@@ -34,7 +34,11 @@ func (u *Auth) Create(w http.ResponseWriter, r *http.Request) {
 	credentials := Credentials{
 	}
 
-	parseJSON(w, r, &credentials)
+	err := parseJSON(r, &credentials)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	companyUser := models.User{
 		RoleID:   1,
 		Password: credentials.Password,
@@ -58,12 +62,16 @@ func (u *Auth) Login(w http.ResponseWriter, r *http.Request) {
 	credentials := Credentials{
 	}
 
-	parseJSON(w, r, &credentials)
+	err := parseJSON(r, &credentials)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	companyUser := models.User{
 		Password: credentials.Password,
 		Email:    credentials.Email,
 	}
-	_, err := u.us.Authenticate(companyUser.Email, companyUser.Password)
+	_, err = u.us.Authenticate(companyUser.Email, companyUser.Password)
 	if err != nil {
 		switch err {
 		case models.ErrNotFound:

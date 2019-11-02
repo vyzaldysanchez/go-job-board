@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/samueldaviddelacruz/go-job-board/API/models"
 )
@@ -23,12 +24,40 @@ func NewJobs(js models.JobPostService, ss models.SkillsService) *Jobs {
 
 // GET /jobs
 func (j *Jobs) List(w http.ResponseWriter, r *http.Request) {
-	jobs, err := j.js.FindAll()
+	queryObj := models.JobPost{}
+	queryObj.Title = r.URL.Query().Get("q")
+	if userId, err := strconv.Atoi(r.URL.Query().Get("u")); err == nil {
+		queryObj.UserID = uint(userId)
+	}
+	if locationId, err := strconv.Atoi(r.URL.Query().Get("l")); err == nil {
+		queryObj.LocationID = uint(locationId)
+	}
+	if categoryId, err := strconv.Atoi(r.URL.Query().Get("c")); err == nil {
+		queryObj.CategoryID = uint(categoryId)
+	}
+	queryObj.Skills = extractSkillsFromQueryStr(r)
+
+	jobs, err := j.js.FindAll(&queryObj)
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, err)
 		return
 	}
 	respondJSON(w, http.StatusOK, jobs)
+}
+
+func extractSkillsFromQueryStr(r *http.Request) []models.Skill {
+	var skills []models.Skill
+	if skillsStr := r.URL.Query().Get("sk"); skillsStr != "" {
+		skillsIds := strings.Split(skillsStr, ",")
+		for _, skillId := range skillsIds {
+			if id, err := strconv.Atoi(skillId); err == nil {
+				newSkill := models.Skill{}
+				newSkill.ID = uint(id)
+				skills = append(skills, newSkill)
+			}
+		}
+	}
+	return skills
 }
 
 //POST /jobs
@@ -37,8 +66,11 @@ func (j *Jobs) Create(w http.ResponseWriter, r *http.Request) {
 	jobPost := models.JobPost{
 
 	}
-	parseJSON(w, r, &jobPost)
-
+	err := parseJSON(r, &jobPost)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	if err := j.js.Create(&jobPost); err != nil {
 
 		respondJSON(w, http.StatusInternalServerError, "Could not create jobPost")
@@ -56,8 +88,11 @@ func (j *Jobs) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	parseJSON(w, r, jobPost)
-
+	parseJSON(r, jobPost)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	if err := j.js.Update(jobPost); err != nil {
 
 		respondJSON(w, http.StatusInternalServerError, "Could not update jobPost")
@@ -70,6 +105,7 @@ func (j *Jobs) Update(w http.ResponseWriter, r *http.Request) {
 func (j *Jobs) Delete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id, err := strconv.Atoi(vars["id"])
+
 	if err != nil {
 		respondJSON(w, http.StatusInternalServerError, "Could not delete jobPost")
 		return
@@ -91,8 +127,11 @@ func (j *Jobs) AddJobPostSkill(w http.ResponseWriter, r *http.Request) {
 	}
 
 	skill := models.Skill{}
-	parseJSON(w, r, &skill)
-
+	parseJSON(r, &skill)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	if err := j.ss.AddSkillToOwner(jobPost, skill); err != nil {
 		respondJSON(w, http.StatusInternalServerError, err.Error())
 		return
@@ -109,8 +148,11 @@ func (j *Jobs) RemoveJobPostSkill(w http.ResponseWriter, r *http.Request) {
 	}
 
 	skill := models.Skill{}
-	parseJSON(w, r, &skill)
-
+	parseJSON(r, &skill)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 	if err := j.ss.DeleteSkillFromOwner(jobPost, skill); err != nil {
 		respondJSON(w, http.StatusInternalServerError, err.Error())
 		return
